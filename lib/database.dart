@@ -26,7 +26,7 @@ class AppDatabase extends _$AppDatabase {
   Future<List<LocalTransaction>> getAllTransactions() => select(localTransactions).get();
   
   Future<int> insertTransaction(double amount, String category, String subcategory, String paymentMethod, String? description, DateTime date, bool isUnwarranted) {
-    return into(localTransactions).insert(LocalTransactionsCompanion(
+    return this.into(localTransactions).insert(LocalTransactionsCompanion(
       amount: Value(amount),
       category: Value(category),
       subcategory: Value(subcategory),
