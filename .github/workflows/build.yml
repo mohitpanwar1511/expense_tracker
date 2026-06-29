@@ -1,26 +1,31 @@
 name: Flutter Build APK
-on: [push, workflow_dispatch]
+
+on:
+  push:
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.22.x'
-          channel: 'stable'
-          
-      - run: flutter create --platforms=android .
-      - run: flutter pub get
-      - run: flutter build apk --release
-      
-      # Manually pulls the app file out of the hidden build folders to the front page
-      - run: cp build/app/outputs/flutter-apk/app-release.apk ./app-release.apk
+          flutter-version: '3.27.4'
+          channel: stable
 
-      - name: Upload APK Artifact
+      - run: flutter --version
+
+      - run: flutter create --platforms=android .
+
+      - run: flutter pub get
+
+      - run: flutter build apk --release
+
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: expense-tracker-app
-          path: app-release.apk
+          path: build/app/outputs/flutter-apk/app-release.apk
