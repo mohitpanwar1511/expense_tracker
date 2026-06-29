@@ -6,33 +6,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.22.x'
           channel: 'stable'
-
-      # Move our custom code to a temporary folder so it doesn't get deleted
-      - run: |
-          mkdir temp_lib
-          cp -r lib/* temp_lib/
-          cp pubspec.yaml temp_pubspec.yaml
-
-      # Generate a clean, official Android foundation framework
+          
       - run: flutter create --platforms=android .
-
-      # Restore our premium custom code files on top of the framework
-      - run: |
-          rm -rf lib
-          mv temp_lib lib
-          mv temp_pubspec.yaml pubspec.yaml
-          rm -rf test
-
-      # Get dependencies and generate high-performance database pipelines
       - run: flutter pub get
       - run: dart run build_runner build --delete-conflicting-outputs
-
-      # Build the final installation file
       - run: flutter build apk --release
       
       - name: Upload APK Artifact
