@@ -1,0 +1,17 @@
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^2.5.1
+  drift: ^2.14.1
+  sqlite3_flutter_libs: ^0.5.18
+  fl_chart: ^0.66.0
+  intl: ^0.19.0
+  google_fonts: ^6.1.0
+  path_provider: ^2.1.1
+  path: ^1.9.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  drift_dev: ^2.14.1
+  build_runner: ^2.4.8
