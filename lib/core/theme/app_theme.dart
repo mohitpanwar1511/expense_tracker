@@ -25,7 +25,9 @@ class AppTheme {
         surface: AppColors.cardLight,
       ),
       textTheme: GoogleFonts.interTextTheme(ThemeData.light().textTheme),
-      cardTheme: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      cardTheme: CardTheme(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      ),
     );
   }
 
@@ -41,7 +43,9 @@ class AppTheme {
         surface: AppColors.cardDark,
       ),
       textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
-      cardTheme: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      cardTheme: CardTheme(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      ),
     );
   }
 }
