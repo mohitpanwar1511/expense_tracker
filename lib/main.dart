@@ -1,14 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as p;
-import 'dart:io';
 import 'package:fl_chart/fl_chart.dart';
-
-part 'main.g.dart';
+import 'database.dart'; // Links to our clean database file
 
 // --- THEME ---
 class AppColors {
@@ -41,58 +35,40 @@ class AppTheme {
   );
 }
 
-// --- DATABASE ---
-class LocalTransactions extends Table {
-  IntColumn get id => integer().autoIncrement()();
-  RealColumn get amount => real()();
-  TextColumn get category => text()();
-  TextColumn get subcategory => text()();
-  TextColumn get paymentMethod => text()();
-  TextColumn get description => text().nullable()();
-  DateTimeColumn get date => dateTime()();
-  BoolColumn get isUnwarranted => boolean().withDefault(const Constant(false))();
-}
-
-@DriftDatabase(tables: [LocalTransactions])
-class AppDatabase extends _$AppDatabase {
-  AppDatabase() : super(_openConnection());
-  @override
-  int get schemaVersion => 1;
-}
-
-LazyDatabase _openConnection() {
-  return LazyDatabase(() async {
-    final dbFolder = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dbFolder.path, 'expenses.sqlite'));
-    return NativeDatabase.createInBackground(file);
-  });
-}
-
-// --- STATE MANAGEMENT ---
-class ExpenseRepository {
-  final AppDatabase _db;
-  ExpenseRepository(this._db);
-  Future<List<LocalTransaction>> getAllTransactions() => _db.select(_db.localTransactions).get();
-  Future<int> insertTransaction(LocalTransactionsCompanion entity) => _db.into(_db.localTransactions).insert(entity);
-  Future<bool> deleteTransaction(int id) async => (await _db.delete(_db.localTransactions)..where((t) => t.id.equals(id))).go() > 0;
-}
-
+// --- STATE PROVIDERS ---
 final databaseProvider = Provider<AppDatabase>((ref) => AppDatabase());
-final repositoryProvider = Provider<ExpenseRepository>((ref) => ExpenseRepository(ref.watch(databaseProvider)));
-final transactionNotifierProvider = StateNotifierProvider<TransactionNotifier, List<LocalTransaction>>((ref) => TransactionNotifier(ref.watch(repositoryProvider)));
+
+final transactionNotifierProvider = StateNotifierProvider<TransactionNotifier, List<LocalTransaction>>((ref) {
+  return TransactionNotifier(ref.watch(databaseProvider));
+});
 
 class TransactionNotifier extends StateNotifier<List<LocalTransaction>> {
-  final ExpenseRepository _repository;
-  TransactionNotifier(this._repository) : super([]) { loadTransactions(); }
-  Future<void> loadTransactions() async { state = await _repository.getAllTransactions(); }
-  Future<void> addTransaction({required double amount, required String category, required String subcategory, required String paymentMethod, required String description, required DateTime date, required bool isUnwarranted}) async {
-    await _repository.insertTransaction(LocalTransactionsCompanion(amount: Value(amount), category: Value(category), subcategory: Value(subcategory), paymentMethod: Value(paymentMethod), description: Value(description), date: Value(date), isUnwarranted: Value(isUnwarranted)));
+  final AppDatabase _db;
+  TransactionNotifier(this._db) : super([]) { loadTransactions(); }
+
+  Future<void> loadTransactions() async {
+    state = await _db.getAllTransactions();
+  }
+
+  Future<void> addTransaction({
+    required double amount,
+    required String category,
+    required String subcategory,
+    required String paymentMethod,
+    required String description,
+    required DateTime date,
+    required bool isUnwarranted,
+  }) async {
+    await _db.insertTransaction(amount, category, subcategory, paymentMethod, description, date, isUnwarranted);
     await loadTransactions();
   }
-  Future<void> removeTransaction(int id) async { await _repository.deleteTransaction(id); await loadTransactions(); }
+
+  Future<void> removeTransaction(int id) async {
+    await _db.deleteTransaction(id);
+    await loadTransactions();
+  }
 }
 
-// --- MAIN RUNNER ---
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const ProviderScope(child: ExpenseTrackerApp()));
@@ -137,7 +113,7 @@ class DashboardScreen extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text("Overview", style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
-                      Text("Clean financial footprint", style: const TextStyle(color: Colors.grey)),
+                      const Text("Clean financial footprint", style: TextStyle(color: Colors.grey)),
                     ],
                   ),
                   IconButton(icon: const Icon(Icons.analytics_outlined, size: 28), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AnalyticsScreen()))),
